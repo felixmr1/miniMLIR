@@ -4,19 +4,15 @@ MLIR-based code generation using Python.
 
 ## Overview
 
-Python
-      ↓
-High-level MLIR
-      ↓
-GPU dialect
-      ↓
-NVVM dialect
-      ↓
-LLVM IR
-      ↓
-PTX/CUDA (current implementation)
-      ↓
-GPU Kernels
+```mermaid
+graph LR
+    A[Python] --> B[High-level MLIR]
+    B --> C[GPU dialect]
+    C --> D[NVVM dialect]
+    D --> E[LLVM IR]
+    E --> F[PTX or CUDA]
+    F --> G[GPU Kernels]
+```
 
 ## Requirements
 
@@ -31,53 +27,29 @@ GPU Kernels
 ### Install Python dependencies
 ```bash
 pip install numpy cupy-cuda12x  # Use appropriate CUDA version
-```
+````
 
 ### Build llvm-project from scratch (to get python bindnings)
+
 ```bash
 git clone git@github.com:llvm/llvm-project.git
 cd llvm-project
 mkdir build && cd build
 cmake -G Ninja \
-	-DLLVM_ENABLE_PROJECTS="mlir;clang" \
-	-DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
-	-DCMAKE_BUILD_TYPE=Release \
-	-DMLIR_ENABLE_CUDA_RUNNER=ON \
-	-DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.1/bin/nvcc \
-	-DCMAKE_CUDA_ARCHITECTURES=86 \
-	-DLLVM_ENABLE_ASSERTIONS=ON \
-	-DMLIR_ENABLE_BINDINGS_PYTHON=ON \
-	-DPython3_EXECUTABLE=$(which python) \
-	-DLLVM_ENABLE_RTTI=ON \
-	../llvm
+ -DLLVM_ENABLE_PROJECTS="mlir;clang" \
+ -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
+ -DCMAKE_BUILD_TYPE=Release \
+ -DMLIR_ENABLE_CUDA_RUNNER=ON \
+ -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.1/bin/nvcc \
+ -DCMAKE_CUDA_ARCHITECTURES=86 \
+ -DLLVM_ENABLE_ASSERTIONS=ON \
+ -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+ -DPython3_EXECUTABLE=$(which python) \
+ -DLLVM_ENABLE_RTTI=ON \
+ ../llvm
 ```
-
-## Usage
-
-The main entry point is matmul.py:
-
-```python
-import numpy as np
-from matmul import matmul
-```
-
-### Create sample matrices
-a = np.random.randn(1024, 1024).astype(np.float32)
-b = np.random.randn(1024, 1024).astype(np.float32)
-
-### Perform GPU matrix multiplication
-result = matmul(a, b)
 
 ## Implementation Details
-
-### Block and Grid Configuration
-
-The implementation uses fixed block sizes of 16x16 for simplicity. Grid sizes are calculated based on matrix dimensions:
-
-def calculate_grid_size(matrix_size: tuple, block_size: tuple) -> tuple:
-    grid_size_x = (matrix_size[0] + block_size[0] - 1) // block_size[0]
-    grid_size_y = (matrix_size[1] + block_size[1] - 1) // block_size[1]
-    return (int(grid_size_x), int(grid_size_y))
 
 ### MLIR Generation
 
